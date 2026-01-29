@@ -1,0 +1,25 @@
+## Install dev-dependencies
+# pip install -r requirements-dev.txt
+## Make an editable install of the package
+# python -m pip install --editable . --upgrade
+
+# Нужное для либы
+antlr4-python3-runtime==4.11.0
+mpmath==1.3.0
+sympy==1.13.1
+# Для тестов
+coverage
+pytest
+pytest-xdist
+pytest-timeout
+# Для сборки
+wheel
+twine
+setuptools
+# Стили
+flake8
+ruff
+# для hot reload-viewer'а
+fastapi
+watchdog
+uvicorn[standard]

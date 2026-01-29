@@ -1,0 +1,13 @@
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+/**/__pycache__/
+/**/.idea/
+*egg-info*
+.coverage
+/examples/.ipynb_checkpoints/
+/misc/profile.speedscope.json
+/misc/*.xlsx
+/misc/.*
