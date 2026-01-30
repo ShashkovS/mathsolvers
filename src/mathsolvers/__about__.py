@@ -8,3 +8,4 @@ __all__ = [
 __version__ = '0.20.18'
 __author__ = 'Sergey Shashkov'
 __license__ = 'MIT'
+__copyright__ = ''
