@@ -21,13 +21,15 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dynamic = ["version"]
 dependencies = [
     "antlr4-python3-runtime==4.11.0",
-    "mpmath==1.3.0",
-    "sympy==1.13.1",
+    "mpmath>=1.3.0",
+    "sympy>=1.13.1",
 ]
 
 
