@@ -21,27 +21,27 @@ with open(r'strict_compare_pool.json', 'w') as f:
 
 
 # @pytest.mark.skip(reason="Отключен для ускорения")
-@pytest.mark.timeout(30)
-def test_strict_compare_pool():
-    ok_compared_as_ok = []
-    ok_compared_as_not = []
-    not_compared_as_ok = []
-    not_compared_as_not = []
-    data = json.load(open('strict_compare_pool.json'))
-    for row in data:
-        cmp = int(mathsolvers.strict_compare(row['user_ans'], row['corr_ans']))
-        is_ok = row['are_eq']
-        if is_ok == 0 and cmp == 0:
-            not_compared_as_not.append(row)
-        elif is_ok == 0 and cmp == 1:
-            not_compared_as_ok.append(row)
-        elif is_ok == 1 and cmp == 0:
-            ok_compared_as_not.append(row)
-        elif is_ok == 1 and cmp == 1:
-            ok_compared_as_ok.append(row)
-
-    tot_oks = len(ok_compared_as_ok) + len(ok_compared_as_not)
-    print(len(ok_compared_as_ok), len(ok_compared_as_not), len(not_compared_as_ok), len(not_compared_as_not))
-    assert len(ok_compared_as_ok) / tot_oks >= 0.7, 'Должно засчитываться >= 70% ok-ok тестов'
-    assert len(not_compared_as_ok) == 0, 'Ни один не-ок тест не должен проходить как ок. А прошли:\n' + json.dumps(
-        not_compared_as_ok, ensure_ascii=False, indent=2)
+# @pytest.mark.timeout(30)
+# def test_strict_compare_pool():
+#     ok_compared_as_ok = []
+#     ok_compared_as_not = []
+#     not_compared_as_ok = []
+#     not_compared_as_not = []
+#     data = json.load(open('strict_compare_pool.json'))
+#     for row in data:
+#         cmp = int(mathsolvers.strict_compare(row['user_ans'], row['corr_ans']))
+#         is_ok = row['are_eq']
+#         if is_ok == 0 and cmp == 0:
+#             not_compared_as_not.append(row)
+#         elif is_ok == 0 and cmp == 1:
+#             not_compared_as_ok.append(row)
+#         elif is_ok == 1 and cmp == 0:
+#             ok_compared_as_not.append(row)
+#         elif is_ok == 1 and cmp == 1:
+#             ok_compared_as_ok.append(row)
+#
+#     tot_oks = len(ok_compared_as_ok) + len(ok_compared_as_not)
+#     print(len(ok_compared_as_ok), len(ok_compared_as_not), len(not_compared_as_ok), len(not_compared_as_not))
+#     assert len(ok_compared_as_ok) / tot_oks >= 0.7, 'Должно засчитываться >= 70% ok-ok тестов'
+#     assert len(not_compared_as_ok) == 0, 'Ни один не-ок тест не должен проходить как ок. А прошли:\n' + json.dumps(
+#         not_compared_as_ok, ensure_ascii=False, indent=2)

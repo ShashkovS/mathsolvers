@@ -6,10 +6,10 @@
 from collections.abc import Callable
 from fractions import Fraction
 from tokenize import ERRORTOKEN, NAME, NUMBER, OP, TokenError
-from typing import Any
+from typing import Any, Union
 
 from sympy.parsing import sympy_parser
-from sympy.parsing.sympy_parser import AppliedFunction, _token_callable, tUnion
+from sympy.parsing.sympy_parser import AppliedFunction, _token_callable
 
 from mathsolvers.solvers_stuff import units_quantities
 
@@ -325,7 +325,7 @@ def auto_number(tokens: list[TOKEN], local_dict: DICT, global_dict: DICT):
     return result
 
 
-def _implicit_multiplication_patched(tokens: list[tUnion[TOKEN, AppliedFunction]], local_dict: DICT, global_dict: DICT):
+def _implicit_multiplication_patched(tokens: list[Union[TOKEN, AppliedFunction]], local_dict: DICT, global_dict: DICT):
     """Implicitly adds '*' tokens.
 
     Cases:
@@ -341,7 +341,7 @@ def _implicit_multiplication_patched(tokens: list[tUnion[TOKEN, AppliedFunction]
     - AppliedFunction next to an implicitly applied function ("sin(x)cos x")
 
     """
-    result: list[tUnion[TOKEN, AppliedFunction]] = []
+    result: list[Union[TOKEN, AppliedFunction]] = []
     skip = False
     for ind in range(len(tokens) - 1):
         tok = tokens[ind]

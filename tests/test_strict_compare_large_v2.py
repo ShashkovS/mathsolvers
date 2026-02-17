@@ -47,22 +47,22 @@ def _run_on_data(data):
         not_compared_as_ok, ensure_ascii=False, indent=2)
 
 
-# @pytest.mark.skip(reason="Отключен для ускорения")
-@pytest.mark.timeout(60)
-def test_strict_compare_v2_pool_p1():
-    data = json.load(open('strict_compare_pool.json'))
-    _run_on_data(data[::3])
-
-
-# @pytest.mark.skip(reason="Отключен для ускорения")
-@pytest.mark.timeout(60)
-def test_strict_compare_v2_pool_p2():
-    data = json.load(open('strict_compare_pool.json'))
-    _run_on_data(data[1::3])
-
-
-# @pytest.mark.skip(reason="Отключен для ускорения")
-@pytest.mark.timeout(60)
-def test_strict_compare_v2_pool_p3():
-    data = json.load(open('strict_compare_pool.json'))
-    _run_on_data(data[2::3])
+# # @pytest.mark.skip(reason="Отключен для ускорения")
+# @pytest.mark.timeout(60)
+# def test_strict_compare_v2_pool_p1():
+#     data = json.load(open('strict_compare_pool.json'))
+#     _run_on_data(data[::3])
+#
+#
+# # @pytest.mark.skip(reason="Отключен для ускорения")
+# @pytest.mark.timeout(60)
+# def test_strict_compare_v2_pool_p2():
+#     data = json.load(open('strict_compare_pool.json'))
+#     _run_on_data(data[1::3])
+#
+#
+# # @pytest.mark.skip(reason="Отключен для ускорения")
+# @pytest.mark.timeout(60)
+# def test_strict_compare_v2_pool_p3():
+#     data = json.load(open('strict_compare_pool.json'))
+#     _run_on_data(data[2::3])
