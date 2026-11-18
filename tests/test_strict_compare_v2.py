@@ -249,6 +249,8 @@ cases = [
     ('60 см', '0,6 м', CompareVerdict.MAY_BE),
     ('четыре и одна седьмая?', '4 целых и 1/7', CompareVerdict.EQUAL),
     ('49', '49 Н', CompareVerdict.EQUAL),
+    ('-1/2(x-4)^2', '(-1/2)*x^2 + 4x -8', CompareVerdict.MAY_BE),
+    ('y = -1/2(x-4)^2', 'y = (-1/2)*x^2 + 4x -8', CompareVerdict.MAY_BE),
 ]
 
 
