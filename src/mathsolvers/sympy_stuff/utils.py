@@ -81,6 +81,7 @@ PARSE_LOCAL_DICT = {
     # единицы измерения
     **units_quantities.UNITS_PARSE_DICT,
     'pcnt': pcnt,
+    'ncr': sympy.binomial,
     'Pr': Pr,
     'PDiv': PDiv,
     'IMul': IMul,
@@ -171,10 +172,55 @@ def unicode_power_replacer(match):
 # implicit_division_re.findall('2/ab 2/sin 2/363 2/234a 2/2^3ab 2/a^2b^3c')
 # Out[14]: ['ab', '234a', '2^3ab', 'a^2b^3c']
 not_function_re = r'(?<!im|ln|re|tg)(?<!a(?:bs|rg)|c(?:os|tg)|exp|log|sin|tan)(?<!a(?:c(?:o(?:s|t)|sc)|s(?:ec|in)|tan)|cbrt|s(?:ign|qrt))\b'
-implicit_division_re = re.compile(r'(?<=/)\s*((?:(?:\d+(?=\b|\D)|[a-zA-Z])(?:(?:\^|\*\*)\{\d\})?){2,4})' + not_function_re)
+implicit_division_re = re.compile(r'(?<=/)(?!\s*ncr\()\s*((?:(?:\d+(?=\b|\D)|[a-zA-Z])(?:(?:\^|\*\*)\{\d\})?){2,4})' + not_function_re)
+
+
+ncr_call = re.compile(r'\bncr\s*\(', re.IGNORECASE)
+_ncr_tokens = re.compile(ncr_call.pattern + r'|[(),]', re.IGNORECASE)
+
+
+def ncr_chunks(expr: str):
+    """Yield ordinary text, call contents and normalized argument separators."""
+    if not ncr_call.search(expr):
+        yield 'text', expr
+        return
+    # Each entry counts separators for an nCr call, or is None for ordinary parentheses.
+    stack = []
+    calls = 0
+    start = 0
+    for match in _ncr_tokens.finditer(expr):
+        token = match.group()
+        if token == '(':
+            stack.append(None)
+        elif token == ')':
+            separators = stack.pop() if stack else None
+            if separators is not None:
+                if separators != 1:
+                    raise ValueError('nCr requires two arguments')
+                calls -= 1
+                if not calls:
+                    yield 'call', expr[start:match.end()]
+                    start = match.end()
+        elif token == ',':
+            if stack and stack[-1] is not None:
+                stack[-1] += 1
+                yield 'call', expr[start:match.start()]
+                yield 'separator', ' , '
+                start = match.end()
+        else:
+            if not calls:
+                yield 'text', expr[start:match.start()]
+                start = match.start()
+            calls += 1
+            stack.append(0)
+    if calls:
+        raise ValueError('Unclosed nCr call')
+    yield 'text', expr[start:]
 
 
 def pre_parse(expr: str) -> str:
+    if ncr_call.search(expr):
+        expr = ncr_call.sub('ncr(', ''.join(part for _, part in ncr_chunks(expr)))
     expr = expr.translate(_op_trans_table)
     expr = expr.strip(' \t\n?:.,=;$')
     # Мы используем хак и заменяем такое деление на //. Потом на этапе парсинга заменим его на PDiv
@@ -228,7 +274,6 @@ def parse_and_ns(expr: str, *, transformations=TRANSFORMATIONS, rep_parenthesis=
         parsed_expr = latex.parse_latex(saved_expr)  # parse_latex_lark
         parsed_expr = set_real_assumptions(parsed_expr)
     else:
-        parameters.global_parameters.evaluate = False
         # Мы используем лютый хак для парсинга.
         # Напомним приоритеты операций:
         #   **
@@ -237,8 +282,15 @@ def parse_and_ns(expr: str, *, transformations=TRANSFORMATIONS, rep_parenthesis=
         #   +, -
         #   <<, >>
         # Мы заменим
-        parsed_expr = sympy.parse_expr(expr, transformations=transformations, evaluate=0, local_dict=PARSE_LOCAL_DICT)
-        parameters.global_parameters.evaluate = True
+        with parameters.evaluate(False):
+            parsed_expr = sympy.parse_expr(expr, transformations=transformations, evaluate=0, local_dict=PARSE_LOCAL_DICT)
+    if ncr_call.search(saved_expr):
+        for call in parsed_expr.atoms(sympy.binomial):
+            for arg in call.args:
+                if arg.is_number:
+                    value = arg.doit().simplify()
+                    if value.is_integer is not True or value.is_nonnegative is not True:
+                        raise ValueError('nCr requires nonnegative integer arguments')
     parsed_expr = move_minuses_to_numbers(parsed_expr)
     # Если среди переменных есть и заглавные, и маленькие, то заменяем большие на маленькие
     var_replacer = {
@@ -259,7 +311,7 @@ float_re = re.compile(r'\b\d+\{?[.,]\}?\d+(?:e[-+]?\d+)?\b|\b\d+e[-+]?\d+\b')
 # Обычно превращаем (...) в Pr(...), чтобы скобки сохранились.
 # Но не превращаем: sin(2); 0,(3); 0.(3); 0.1(3); 2**(3); 2^(3); 1/(3) и т.п.
 non_func_parenthesis_re = re.compile(
-    r'(?<!in|os|tg|ln|lg|rt|xp|in|bs|\*\*|.\^|.\d|.\.|.\,|.\/|\/ )(?<!in |os |tg |ln |lg |rt |xp |in |bs |\*\* |.\^ )\('
+    r'(?<!ncr)(?<!in|os|tg|ln|lg|rt|xp|in|bs|\*\*|.\^|.\d|.\.|.\,|.\/|\/ )(?<!in |os |tg |ln |lg |rt |xp |in |bs |\*\* |.\^ )\('
 )
 
 

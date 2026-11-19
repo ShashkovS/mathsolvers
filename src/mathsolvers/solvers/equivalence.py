@@ -322,7 +322,7 @@ unit_replacer[sympy.pi] = sympy.core.Integer(180)
 re_comma_not_in_number = re.compile(r'\D\s*,|,\s*\D')
 re_comparison = re.compile('>=|<=|==|<|>|=')
 re_has_implicit_power = re.compile(r'(?:\b|(?!<[a-zA-Zа-яёА-ЯЁ]))([a-zA-Zа-яёА-ЯЁ)])(\d+)\b')
-re_implicit_division = re.compile(r'(?<=/)\s*((?:(?:\d+(?=\b|\D)|[a-zA-Zа-яёА-ЯЁ])(?:(?:\^|\*\*)\{?\d\}?)?){2,4})')
+re_implicit_division = re.compile(r'(?<=/)(?!\s*ncr\s*\()\s*((?:(?:\d+(?=\b|\D)|[a-zA-Zа-яёА-ЯЁ])(?:(?:\^|\*\*)\{?\d\}?)?){2,4})')
 re_repeated_division = re.compile(r'/\s*\w+\s*/')
 re_i_and_na_as_mul = re.compile(r'\b(?:и|на)\b', flags=re.IGNORECASE)
 re_decimal_sep = re.compile(r'(?<=\d)(?:[,.]|\{,\})(?=\d|\(\d)|frac|/')  # 123.12, 123,12, 123{,}(12) \frac{1}{2} 3/5
@@ -330,13 +330,26 @@ re_remove_thousands_separators = re.compile(r'(?<=\d)(?<!\b0)[ ,.](?=\d{3}(?:[ ,
 re_has_plus_minus = re.compile(r'\\pm|\\mp|\+\-|\-\+')
 
 
+def _prepare_strict_input(expr: str) -> str:
+    chunks = list(utils.ncr_chunks(expr))
+    # Reject lists of answers while allowing a comma between nCr arguments.
+    ordinary_commas = ''.join(' ' if kind == 'separator' else part for kind, part in chunks)
+    if re_comma_not_in_number.search(ordinary_commas):
+        raise ValueError('Unexpected comma in answer')
+    return _prepare_expr(''.join(part for _, part in chunks))
+
+
+def _remove_thousands_outside_ncr(expr: str) -> str:
+    return ''.join(
+        re_remove_thousands_separators.sub('', part) if kind == 'text' else part
+        for kind, part in utils.ncr_chunks(expr)
+    )
+
+
 def _strict_compare_v2_inner(expr1: str, expr2: str) -> CompareVerdict:
     #########################
     # Откидываем то, что парсится криво
     #########################
-    # штуки в духе "\[ x_1 = 4, \quad x_2 = \frac{13}{4} \]" не парсим, парсер работает криво
-    if re_comma_not_in_number.search(expr1) or re_comma_not_in_number.search(expr2):
-        return CompareVerdict.ERROR
     # Из-за особенности парсера "a < b < c" парсится криво
     if len(re_comparison.findall(expr1)) > 1 or len(re_comparison.findall(expr2)) > 1:
         return CompareVerdict.ERROR
@@ -349,16 +362,16 @@ def _strict_compare_v2_inner(expr1: str, expr2: str) -> CompareVerdict:
     expr1_orig = expr1
     expr2_orig = expr2
     # Может быть, они просто равны?
-    expr1 = _prepare_expr(expr1)
-    expr2 = _prepare_expr(expr2)
-    if expr1 == expr2:
+    expr1 = _prepare_strict_input(expr1)
+    expr2 = _prepare_strict_input(expr2)
+    if expr1 == expr2 and not utils.ncr_call.search(expr1):
         return CompareVerdict.EQUAL
 
     # Так, возможно используются запятые или точки как разделители тысяч (ровно в одном из ответов)
     if (bool(re_decimal_sep.search(expr1))) + bool(re_decimal_sep.search(expr2)) == 1:
         # То есть если, условно, правильный ответ "1000", а школьник сдаёт "1.000", то из второго удаляем разделитель
-        expr1 = re_remove_thousands_separators.sub('', expr1)
-        expr2 = re_remove_thousands_separators.sub('', expr2)
+        expr1 = _remove_thousands_outside_ncr(expr1)
+        expr2 = _remove_thousands_outside_ncr(expr2)
 
     # Возможно, и там, и там есть +-. Тогда заменим его на отдельную переменную, скажем, ι
     if len(re_has_plus_minus.findall(expr1)) == len(re_has_plus_minus.findall(expr2)) > 0:
